@@ -7,7 +7,7 @@
     && mkdir build \
     && cd build \
     && cmake .. && make -j4 \
-    && sudo make install
+    && make install
 
   cd "$currentDir"
 
