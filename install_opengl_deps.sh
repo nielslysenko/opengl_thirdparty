@@ -1,7 +1,6 @@
- yes | apt-get install mesa-utils libx11-dev libxrandr-dev libxinerama1-dev libxi-dev libXxf86vm-dev libXcursor-dev libGL-dev libgl1-mesa-dev  
   echo "Installing RANDR!!!"
-  yes | apt-get install xorg-dev libglu1-mesa-dev
-  yes | apt-get install libpthread-stubs0-dev libm17n-dev
+  apt-get update
+  yes | apt-get install xorg-dev libglu1-mesa-dev libgl1-mesa-dev freeglut3-dev
   git clone https://github.com/glfw/glfw \
     && cd glfw \
     && mkdir build \
