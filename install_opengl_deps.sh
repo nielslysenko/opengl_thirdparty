@@ -10,9 +10,9 @@
 
   cd "$currentDir"
 
-  if [ ! -d "./.include" ]; then
-   mkdir ./.include
-  fi
+#  if [ ! -d "./.include" ]; then
+#   mkdir ./.include
+#  fi
 
  # cp -Rv ./glfw/include/ ./.include/ 
-  rm -r glfw
+ # rm -r glfw
