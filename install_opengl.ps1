@@ -136,4 +136,3 @@ cd $DOCDIR
 Remove-Item -Path $DOCDIR"\freeglut-3.0.0" -Recurse -Force
 Remove-Item -Path $DOCDIR"\glew-2.1.0" -Recurse -Force
 Remove-Item -Path $DOCDIR"\glfw" -Recurse -Force
-Remove-Item -Path $DOCDIR"\TarTool" -Recurse -Force
