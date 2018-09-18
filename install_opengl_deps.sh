@@ -16,4 +16,4 @@
   fi
 
  # cp -Rv ./glfw/include/ ./.include/ 
-  sudo rm -r glfw
+  rm -r glfw
