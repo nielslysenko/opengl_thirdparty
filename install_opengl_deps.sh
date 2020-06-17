@@ -1,4 +1,5 @@
   echo "Installing RANDR!!!"
+  export currentDir=pwd
   apt-get update
   yes | apt-get install xorg-dev libglu1-mesa-dev libgl1-mesa-dev freeglut3-dev
   git clone https://github.com/glfw/glfw \
