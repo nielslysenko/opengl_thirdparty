@@ -1,8 +1,8 @@
-# opengl_thirdparty
+# opengl_thirdparty <br />
 
-# Prerequisites (Windows)
-Install cmake
-Install 7zip
-Run Powershell as Administrator.
-Set-ExecutionPolicy Bypass
-/install_opengl.ps1
+# Prerequisites (Windows) <br />
+Install cmake <br />
+Install 7zip <br />
+Run Powershell as Administrator. <br />
+Set-ExecutionPolicy Bypass <br />
+./install_opengl.ps1 <br />
