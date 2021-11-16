@@ -1,138 +1,150 @@
-#get current location
+# get current location
 $DOCDIR = (Resolve-Path .\).Path
 
+#7zip
+$7zipPath = "$env:ProgramFiles\7-Zip\7z.exe"
+if (-not (Test-Path -Path $7zipPath -PathType Leaf)) {
+    throw "7 zip file '$7zipPath' not found"
+}
+Set-Alias 7z $7zipPath
+
+# Build configuration
+$CONFIGURATION = "Release"
+
+$GLEW_VERSION = "2.2.0"
+$FREEGLUT_VERSION = "3.2.1"
+$GLEW_PACKAGE_URL = "https://netix.dl.sourceforge.net/project/glew/glew/${GLEW_VERSION}/glew-${GLEW_VERSION}.zip"
+$GLFW_GIT_URL = "https://github.com/glfw/glfw.git"
+$FREEGLUT_PACKAGE_URL = "https://nav.dl.sourceforge.net/project/freeglut/freeglut/${FREEGLUT_VERSION}/freeglut-${FREEGLUT_VERSION}.tar.gz"
+
+$GLEW_INSTALL_PATH = "${DOCDIR}\glew-${GLEW_VERSION}"
+$GLFW_INSTALL_PATH = "${DOCDIR}\glfw"
+$FREEGLUT_INSTALL_PATH = "${DOCDIR}\freeglut-${FREEGLUT_VERSION}"
+
+$OPENGL_LIBS_PATH = "${DOCDIR}\.lib"
+$OPENGL_BIN_PATH = "${DOCDIR}\.bin"
+$INCLUDE_PATH = "${DOCDIR}\.include"
+
+$OPENGL_INCLUDE_PATH = "${INCLUDE_PATH}\GL"
+
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
 #========================================================================================
-Invoke-WebRequest https://netix.dl.sourceforge.net/project/glew/glew/2.1.0/glew-2.1.0.zip -Out glew-2.1.0.zip -UseBasicParsing
+#$PLATFORM = "x64"
+#$DEFAULT_BUILD_FLAGS = "/p:Configuration=${CONFIGURATION} /property:Platform=${PLATFORM}"
+#function Resolve-MsBuild {
+#    $msb2017 = Resolve-Path "${env:ProgramFiles(x86)}\Microsoft Visual Studio\*\*\MSBuild\*\bin\msbuild.exe" -ErrorAction SilentlyContinue
+#    if($msb2017) {
+#        Write-Host "Found MSBuild 2017 (or later)."
+#        Write-Host $msb2017
+#        return $msb2017
+#    }
+#
+#    $msBuild2015 = "${env:ProgramFiles(x86)}\MSBuild\14.0\bin\msbuild.exe"
+#
+#    if(-not (Test-Path $msBuild2015)) {
+#        throw 'Could not find MSBuild 2015 or later.'
+#    }
+#
+#    Write-Host "Found MSBuild 2015."
+#    Write-Host $msBuild2015
+#
+#    return $msBuild2015
+#}
+#$msBuild = Resolve-MsBuild
+#& $msBuild "glew.sln" ${DEFAULT_BUILD_FLAGS}
 
-function Resolve-MsBuild {
-	$msb2017 = Resolve-Path "${env:ProgramFiles(x86)}\Microsoft Visual Studio\*\*\MSBuild\*\bin\msbuild.exe" -ErrorAction SilentlyContinue
-	if($msb2017) {
-		Write-Host "Found MSBuild 2017 (or later)."ta
-		Write-Host $msb2017
-		return $msb2017
-	}
+# ------------------ CREATE DIRECTORIES -----------------------------------
+if(!(Test-Path -Path ${OPENGL_LIBS_PATH})){
+    New-Item -ItemType directory -Path $OPENGL_LIBS_PATH
+}
 
-	$msBuild2015 = "${env:ProgramFiles(x86)}\MSBuild\14.0\bin\msbuild.exe"
+if(!(Test-Path -Path ${OPENGL_BIN_PATH})){
+    New-Item -ItemType directory -Path ${OPENGL_BIN_PATH}
+}
 
-	if(-not (Test-Path $msBuild2015)) {
-		throw 'Could not find MSBuild 2015 or later.'
-	}
-
-	Write-Host "Found MSBuild 2015."
-	Write-Host $msBuild2015
-
-	return $msBuild2015
+if(!(Test-Path -Path ${INCLUDE_PATH})){
+    New-Item -ItemType directory -Path ${INCLUDE_PATH}
+}
+if(!(Test-Path -Path ${OPENGL_INCLUDE_PATH})){
+    New-Item -ItemType directory -Path ${OPENGL_INCLUDE_PATH}
 }
 
 #--------- CODE STARTS HERE ---------------------------------------------------
 
 #---------- GET GLFW  -------------------------------------------------------
-if(!(Test-Path -Path $DOCDIR"/glfw")){
-git clone -q https://github.com/glfw/glfw.git
+if(!(Test-Path -Path ${GLFW_INSTALL_PATH})){
+    git clone -q ${GLFW_GIT_URL}
 }
 else{
-  git pull -q
+    git pull -q
 }
-
 cd glfw
-if(!(Test-Path -Path $DOCDIR"/glfw/Build")){
-    New-Item -ItemType directory -Path $DOCDIR"/glfw/Build"
+if(!(Test-Path -Path "${GLFW_INSTALL_PATH}/Build")){
+    New-Item -ItemType directory -Path "${GLFW_INSTALL_PATH}/Build"
 }
 cd Build
 cmake ..
-#do MsBuild
-$msBuild = Resolve-MsBuild
-& $msBuild "src/glfw.vcxproj" /verbosity:minimal /p:Configuration=Release /property:Platform=x86
-
-if(!(Test-Path -Path $DOCDIR"/.lib")){
-    New-Item -ItemType directory -Path $DOCDIR"/.lib"
-}
-
-Copy-Item -Path $DOCDIR"\glfw\Build\src\Release\glfw3.lib" -Destination $DOCDIR"\.lib\glfw3.lib"
+cmake --build . --config ${CONFIGURATION}
+Copy-Item -Path "${GLFW_INSTALL_PATH}\Build\src\Release\glfw3.lib" -Destination "$OPENGL_LIBS_PATH\glfw3.lib"
 #--------------------------------------------------------------------------------------
 
 
 #--------- GET GLEW -------------------------------------------------------------------
 cd $DOCDIR
 if(!(Test-Path -Path $DOCDIR"\glew")){
-Invoke-WebRequest https://netix.dl.sourceforge.net/project/glew/glew/2.1.0/glew-2.1.0.zip -Out glew-2.1.0.zip -UseBasicParsing
-Expand-Archive -Path .\glew-2.1.0.zip -Force -DestinationPath  .
-del glew-2.1.0.zip -Force
+Invoke-WebRequest ${GLEW_PACKAGE_URL} -Out glew-${GLEW_VERSION}.zip -UseBasicParsing
+Expand-Archive -Path .\glew-${GLEW_VERSION}.zip -Force -DestinationPath  .
+del "glew-"${GLEW_VERSION}.zip -Force
 }
 
-cd glew-2.1.0
+cd ${GLEW_INSTALL_PATH}
 cd build
 cd cmake
-if(!(Test-Path -Path $DOCDIR"/glew-2.1.0/build/cmake/build")){
-    New-Item -ItemType directory -Path $DOCDIR"/glew-2.1.0/build/cmake/build"
+if(!(Test-Path -Path "${GLEW_INSTALL_PATH}/build/cmake/build")){
+    New-Item -ItemType directory -Path "${GLEW_INSTALL_PATH}/build/cmake/build"
 }
 cd build
 cmake ..
+cmake --build . --config Release
 
-#do MsBuild
-$msBuild = Resolve-MsBuild
-& $msBuild "glew.sln" /verbosity:minimal /p:Configuration=Release /property:Platform=Win32
 
-if(!(Test-Path -Path $DOCDIR"/bin")){
-    New-Item -ItemType directory -Path $DOCDIR"/bin"
-}
-Copy-Item -Path $DOCDIR"\glew-2.1.0\build\cmake\build\bin\Release\glew32.dll" -Destination $DOCDIR"\bin\glew32.dll"
-Copy-Item -Path $DOCDIR"\glew-2.1.0\build\cmake\build\bin\Release\glewinfo.exe" -Destination $DOCDIR"\bin\glewinfo.exe"
-if(!(Test-Path -Path $DOCDIR"/.lib")){
-    New-Item -ItemType directory -Path $DOCDIR"/.lib"
-}
-Copy-Item -Path $DOCDIR"\glew-2.1.0\build\cmake\build\lib\Release\libglew32.lib" -Destination $DOCDIR"\.lib\libglew32.lib"
-Copy-Item -Path $DOCDIR"\glew-2.1.0\build\cmake\build\lib\Release\glew32.lib" -Destination $DOCDIR"\.lib\glew32.lib"
-Copy-Item -Path $DOCDIR"\glew-2.1.0\build\cmake\build\lib\Release\glew32.exp" -Destination $DOCDIR"\.lib\glew32.exp"
+Copy-Item -Path "${GLEW_INSTALL_PATH}\build\cmake\build\bin\Release\glew32.dll" -Destination "${OPENGL_BIN_PATH}\glew32.dll"
+Copy-Item -Path "${GLEW_INSTALL_PATH}\build\cmake\build\bin\Release\glewinfo.exe" -Destination "${OPENGL_BIN_PATH}\glewinfo.exe"
+
+Copy-Item -Path "${GLEW_INSTALL_PATH}\build\cmake\build\lib\Release\libglew32.lib" -Destination "${OPENGL_LIBS_PATH}\libglew32.lib"
+Copy-Item -Path "${GLEW_INSTALL_PATH}\build\cmake\build\lib\Release\glew32.lib" -Destination "${OPENGL_LIBS_PATH}\glew32.lib"
+Copy-Item -Path "${GLEW_INSTALL_PATH}\build\cmake\build\lib\Release\glew32.exp" -Destination "${OPENGL_LIBS_PATH}\glew32.exp"
 #----------------------------------------------------------------------------------------
 
 #---------GET FREE GLUT -----------------------------------------------------------------
 cd $DOCDIR
-if(!(Test-Path -Path $DOCDIR"\freeglut-3.0.0")){
-Invoke-WebRequest https://netix.dl.sourceforge.net/project/freeglut/freeglut/3.0.0/freeglut-3.0.0.tar.gz -Out freeglut-3.0.0.tar.gz -UseBasicParsing
-7z e .\freeglut-3.0.0.tar.gz
-7z x .\freeglut-3.0.0.tar
-del freeglut-3.0.0.tar.gz -Force
-del freeglut-3.0.0.tar -Force
+if(!(Test-Path -Path "${FREEGLUT_INSTALL_PATH}")){
+    Invoke-WebRequest ${FREEGLUT_PACKAGE_URL} -Out freeglut-${FREEGLUT_VERSION}.tar.gz -UseBasicParsing
+    7z e .\freeglut-${FREEGLUT_VERSION}.tar.gz
+    7z x .\freeglut-${FREEGLUT_VERSION}.tar
+    del freeglut-${FREEGLUT_VERSION}.tar.gz -Force
+    del freeglut-${FREEGLUT_VERSION}.tar -Force
 }
-cd $DOCDIR"\freeglut-3.0.0"
+cd "${FREEGLUT_INSTALL_PATH}"
 
-if(!(Test-Path -Path $DOCDIR"/freeglut-3.0.0/build")){
-    New-Item -ItemType directory -Path $DOCDIR"/freeglut-3.0.0/build"
+if(!(Test-Path -Path "${FREEGLUT_INSTALL_PATH}/build")){
+    New-Item -ItemType directory -Path "${FREEGLUT_INSTALL_PATH}/build"
 }
 cd build
 cmake ..
-#do MsBuild
-$msBuild = Resolve-MsBuild
-& $msBuild "freeglut.vcxproj" /verbosity:minimal /p:Configuration=Release /property:Platform=x86
-& $msBuild "freeglut_static.vcxproj" /verbosity:minimal /p:Configuration=Release /property:Platform=x86
+cmake --build . --config ${CONFIGURATION}
+Copy-Item -Path "${FREEGLUT_INSTALL_PATH}\build\bin\Release\freeglut.dll" -Destination "${OPENGL_BIN_PATH}\freeglut.dll"
 
-if(!(Test-Path -Path $DOCDIR"/bin")){
-    New-Item -ItemType directory -Path $DOCDIR"/bin"
-}
-Copy-Item -Path $DOCDIR"\freeglut-3.0.0\build\bin\Release\freeglut.dll" -Destination $DOCDIR"\bin\freeglut.dll"
-if(!(Test-Path -Path $DOCDIR"/.lib")){
-    New-Item -ItemType directory -Path $DOCDIR"/.lib"
-}
-Copy-Item -Path $DOCDIR"\freeglut-3.0.0\build\lib\Release\freeglut.lib" -Destination $DOCDIR"\.lib\freeglut.lib"
-Copy-Item -Path $DOCDIR"\freeglut-3.0.0\build\lib\Release\freeglut.exp" -Destination $DOCDIR"\.lib\freeglut.exp"
-Copy-Item -Path $DOCDIR"\freeglut-3.0.0\build\lib\Release\freeglut_static.lib" -Destination $DOCDIR"\.lib\freeglut_static.lib"
+Copy-Item -Path "${FREEGLUT_INSTALL_PATH}\build\lib\Release\freeglut.lib" -Destination $DOCDIR"\.lib\freeglut.lib"
+Copy-Item -Path "${FREEGLUT_INSTALL_PATH}\build\lib\Release\freeglut.exp" -Destination $DOCDIR"\.lib\freeglut.exp"
+Copy-Item -Path "${FREEGLUT_INSTALL_PATH}\build\lib\Release\freeglut_static.lib" -Destination $DOCDIR"\.lib\freeglut_static.lib"
 
-if(!(Test-Path -Path $DOCDIR"\.include")){
-    New-Item -ItemType directory -Path $DOCDIR"\.include"
-}
-if(!(Test-Path -Path $DOCDIR"/.include/GL")){
-    New-Item -ItemType directory -Path $DOCDIR"/.include/GL"
-}
-
-Copy-Item -Force -Recurse -Verbose $DOCDIR"\freeglut-3.0.0\include\GL" -Destination $DOCDIR"\.include\"
-Copy-Item -Force -Recurse -Verbose $DOCDIR"\glew-2.1.0\include\GL" -Destination $DOCDIR"\.include\"
-Copy-Item -Force -Recurse -Verbose $DOCDIR"\glfw\include\GLFW" -Destination $DOCDIR"\.include\"
-
+Copy-Item -Force -Recurse -Verbose "${FREEGLUT_INSTALL_PATH}\include\GL" -Destination ${OPENGL_INCLUDE_PATH}
+Copy-Item -Force -Recurse -Verbose "${GLEW_INSTALL_PATH}\include\GL" -Destination ${OPENGL_INCLUDE_PATH}
+Copy-Item -Force -Recurse -Verbose "${GLFW_INSTALL_PATH}\include\GLFW" -Destination ${OPENGL_INCLUDE_PATH}
 #----------------------------------------------------------------------------------------
 cd $DOCDIR
-Remove-Item -Path $DOCDIR"\freeglut-3.0.0" -Recurse -Force
-Remove-Item -Path $DOCDIR"\glew-2.1.0" -Recurse -Force
-Remove-Item -Path $DOCDIR"\glfw" -Recurse -Force
+# clear stuff
+Remove-Item -Path ${FREEGLUT_INSTALL_PATH} -Recurse -Force
+Remove-Item -Path ${GLEW_INSTALL_PATH} -Recurse -Force
+Remove-Item -Path ${GLFW_INSTALL_PATH} -Recurse -Force
