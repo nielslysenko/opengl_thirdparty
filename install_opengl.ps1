@@ -25,7 +25,7 @@ $OPENGL_LIBS_PATH = "${DOCDIR}\.lib"
 $OPENGL_BIN_PATH = "${DOCDIR}\.bin"
 $INCLUDE_PATH = "${DOCDIR}\.include"
 
-$OPENGL_INCLUDE_PATH = "${INCLUDE_PATH}\GL"
+$OPENGL_INCLUDE_PATH = ${INCLUDE_PATH}
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 #========================================================================================
@@ -94,7 +94,7 @@ cd $DOCDIR
 if(!(Test-Path -Path $DOCDIR"\glew")){
 Invoke-WebRequest ${GLEW_PACKAGE_URL} -Out glew-${GLEW_VERSION}.zip -UseBasicParsing
 Expand-Archive -Path .\glew-${GLEW_VERSION}.zip -Force -DestinationPath  .
-del "glew-"${GLEW_VERSION}.zip -Force
+del "glew-${GLEW_VERSION}.zip" -Force
 }
 
 cd ${GLEW_INSTALL_PATH}
